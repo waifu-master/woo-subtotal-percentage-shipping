@@ -62,7 +62,7 @@ class Subtotal_Percentage_Shipping_Method extends WC_Shipping_Method {
 		
 		// note: this one gets just the cart subtotal without any tax and discounts
 		$this->add_rate( array(
-			'id'	=> $this->id,
+			'id'	=> $this->get_rate_id(),
 			'label'	=> $this->title,
 			'cost'	=> $packages['cart_subtotal'] * $this->percentage_rate / 100,
 		) );
