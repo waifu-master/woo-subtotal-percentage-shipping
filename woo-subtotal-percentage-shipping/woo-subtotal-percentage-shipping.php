@@ -2,9 +2,9 @@
 
 /**
  * @wordpress-plugin
- * Plugin Name:       Woocommerce Subtotal Percentage Shipping
+ * Plugin Name:       Subtotal Percentage Shipping for Woocommerce
  * Description:       Calculates shipping based on percentage of cart subtotal
- * Version:           0.0.0
+ * Version:           0.0.3
  * Author:            dedbuck
  */
 
@@ -14,7 +14,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Plugin version
-define( 'SUBTOTAL_PERCENTAGE_SHIPPING_VERSION', '0.0.0' );
+define( 'SUBTOTAL_PERCENTAGE_SHIPPING_VERSION', '0.0.3' );
 
 /**
  * Includes the shipping method class
@@ -22,10 +22,18 @@ define( 'SUBTOTAL_PERCENTAGE_SHIPPING_VERSION', '0.0.0' );
  * @since    0.0.0
  */
 
-require plugin_dir_path( __FILE__ ) . 'class-subtotal-percentage-shipping.php';
+//
+
+function subtotal_percentage_shipping_method_init() {
+    if ( ! class_exists( 'Subtotal_Percentage_Shipping_Method' ) ) {
+        require plugin_dir_path( __FILE__ ) . 'class-subtotal-percentage-shipping.php';
+    }
+}
+
+add_action( 'woocommerce_shipping_init', 'subtotal_percentage_shipping_method_init' );
 
 function add_subtotal_percentage_shipping_method( $methods ) {
-    $methods['subtotal_percentage'] = 'Subtotal_Percentage_Shipping'; 
+    $methods['subtotal_percentage'] = 'Subtotal_Percentage_Shipping_Method';
     return $methods;
 }
 

@@ -5,100 +5,67 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-add_action( 'woocommerce_shipping_init', 'subtotal_percentage_shipping_init' );
 
-// defines the shipping method
-function subtotal_percentage_shipping_init() {
-	if (!class_exists('Subtotal_Percentage_Shipping')) {
-		/**
-		 * Subtotal_Percentage_Shipping class.
-		 *
-		 * @since		0.0.0
-		 * @category	Class
-		 * @author 		Wenzel Matthew
-		 */
-		class Subtotal_Percentage_Shipping extends WC_Shipping_Method {
+class Subtotal_Percentage_Shipping_Method extends WC_Shipping_Method {
 
-			/**
-			 * % rate to charge. Default is 10%
-			 *
-			 * @since		0.0.0
-			 */
-			private $percentage_rate = 10;
+	// holds percentage rate
+	private $percentage_rate;
 
-			/**
-			 * Constructor
-			 *
-			 * @since		0.0.0
-			 */
-			public function __construct() {
-				$this->id = 'subtotal_percentage';
-				$this->method_title = __('Subtotal Percentage', 'subtotal_percentage');
-				$this->method_description = __('Charges a certain percentage of the cart subtotal as shipping fee', 'subtotal_percentage');
-				$this->init();
-				$this->enabled = isset($this->settings['enabled']) ? $this->settings['enabled'] : 'yes';
-				$this->title = isset($this->settings['title']) ? $this->settings['title'] : __('Subtotal Percentage', 'subtotal_percentage');
-				$this->percentage_rate = isset($this->settings['percentage_rate']) ? $this->settings['deposit_percent'] : 10;
-			}
+	/**
+	 * Constructor. The instance ID is passed to this.
+	 */
+	public function __construct( $instance_id = 0 ) {
+		$this->id                    = 'subtotal_percentage';
+		$this->instance_id 			 = absint( $instance_id );
+		$this->method_title          = __( 'Subtotal Percentage' );
+		$this->method_description    = __( 'Charges a certain percentage of the cart subtotal as shipping fee' );
+		$this->supports              = array(
+			'shipping-zones',
+			'instance-settings',
+			'instance-settings-modal' // popup style settings page
+		);
+		// the settings available for this shipping method
+		$this->instance_form_fields = array(
+			'enabled' => array(
+				'title' 		=> __( 'Enabled' ),
+				'type' 			=> 'checkbox',
+				'default' 		=> 'yes',
+			),
+			'title' => array(
+				'title' 		=> __( 'Display Title' ),
+				'type' 			=> 'text',
+				'description' 	=> __( 'This controls the title which the user sees during checkout.' ),
+				'default'		=> __( 'Subtotal percentage' ),
+				'desc_tip'		=> true
+			),
+			'percentage_rate' => array(
+				'title' 		=> __( 'Percentage Rate' ),
+				'type' 			=> 'number',
+				'description' 	=> __( 'Percentage of cart subtotal charged as shipping fee' ),
+				'default'		=> 10, // 10% default percentage rate
+				'desc_tip'      => true
+			)
+		);
+		// gets options from settings
+		$this->enabled		    = $this->get_option( 'enabled' );
+		$this->title            = $this->get_option( 'title' );
+		$this->percentage_rate  = $this->get_option( 'percentage_rate' );
 
-			/**
-			 * Loads setting API
-			 *
-			 * @since		0.0.0
-			 */
-			function init() {
-				$this->init_form_fields();
-				$this->init_settings();
-				add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
-			}
+		add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
+	}
 
-			/**
-			 * Loads setting form fields
-			 *
-			 * @since		0.0.0
-			 */
-			function init_form_fields() {
-				$this->form_fields = array(
-					'enabled' => array(
-						'title' => __('Enable', 'subtotal_percentage'),
-						'type' => 'checkbox',
-						'default' => 'yes'
-					),
-					'percentage_rate' => array(
-						'title' => __('% of cart subtotal to charge', 'subtotal_percentage'),
-						'type' => 'number',
-						'default' => 10
-					),
-					'title' => array(
-						'title' => __('Title', 'subtotal_percentage'),
-						'type' => 'text',
-						'default' => __('subtotal_percentage Shipping', 'subtotal_percentage')
-					)
-				);
-			}
+	/**
+	 * calculate_shipping function.
+	 * @param array $packages (default: array())
+	 */
+	public function calculate_shipping( $packages = array() ) {
+		
+		// note: this one gets just the cart subtotal without any tax and discounts
+		$this->add_rate( array(
+			'id'	=> $this->id,
+			'label'	=> $this->title,
+			'cost'	=> $packages['cart_subtotal'] * $this->percentage_rate / 100,
+		) );
 
-			/**
-			 * Calculates shipping
-			 *
-			 * @since		0.0.0
-			 */
-			public function calculate_shipping($package {
-
-				$subtotal = 0;
-				$cost = 0;
-
-				$subtotal = WC()->cart->get_cart_subtotal();
-				$cost = $subtotal * $this->deposit_percent / 100;
-				
-				$rate = array(
-				'id' => $this->id,
-				'label' => $this->title,
-				'cost' => $cost
-				);
-
-				$this->add_rate($rate);
-			}
-
-		}
 	}
 }
